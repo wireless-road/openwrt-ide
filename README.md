@@ -89,3 +89,9 @@ to enter it back:
 $ docker start openwrt
 $ docker exec -it openwrt bash
 ```
+
+
+#### user layer applications development
+here two developers guide to develop and debug user layer applications:
+- [openwrt development and debugging using eclipse ide](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/)
+- [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
