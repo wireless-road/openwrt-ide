@@ -1,0 +1,16 @@
+version: "2"
+services:
+  openwrt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openwrt_imx6ull
+    entrypoint: /bin/bash
+    privileged: true
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes: 
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /home/al/docker/ide/:/opt/eclipse/
+      - /dev/bus/usb:/dev/bus/usb
+
