@@ -67,6 +67,26 @@ right click on project and press to `Clean Project`.
 right click on project and press to `Build Project`:
 ![build and clean](./doc/build_clean_project.png "u-boot")
 
+
+##### dirty hack
+The only dirty thing need to be done is hard code one line in source code. For that:
+
+Type in U-boot console of running (not under debugger):
+```
+=> printenv fdtcontroladdr
+fdtcontroladdr=8ef216d8
+```
+Then open `u-boot/lib/fdtdec.c`, navigate to `fdtdec_setup()` function and change:
+```
+gd->fdt_blob = &_end;
+```
+to:
+```
+gd->fdt_blob = (ulong *)0x8ef216d8;//&_end;
+```
+![eclipse](./doc/u_boot_60.png "dirty hack")
+
+Now everything ready to debug.
 to start debugging press `Run --> Debug Configurations`, select `u-boot Default` configuration and press `Debug`:
 ![debug_configuration](./doc/debug_configuration.png "debug_configuration")
 Eclipse suggests to swith to Debug perspective - accept it. Wait few seconds before image to be uploaded to hardware:
@@ -90,8 +110,9 @@ $ docker start openwrt
 $ docker exec -it openwrt bash
 ```
 
-
 #### user layer applications development
 here two developers guide to develop and debug user layer applications:
+- [debugging u-boot. Detailed guide](https://m2m-tele.com/blog/2021/09/19/how-to-debug-u-boot/)
 - [openwrt development and debugging using eclipse ide](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/)
 - [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
+
