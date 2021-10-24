@@ -14,7 +14,7 @@ This project makes two things:
 
 Clone the repository:
 ```
-git clone https://github.com/wireless-road/imx6ull-openwrt
+git clone https://github.com/wireless-road/openwrt-ide.git
 ```
 
 Open `docker-compose.yml` and replace left side of `- /home/al/docker/ide/:/opt/eclipse/` volume declaration to the path you want openwrt sources and eclipse to be placed.
