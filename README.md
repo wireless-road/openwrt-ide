@@ -111,7 +111,7 @@ restore u-boot.dtb binary 0x87882d68
 (gdb) b board_init_r
 (gdb) c
 ```
-Here we set breakpoint at `relocate_code` function to make sure that `board_init_f` completed and we can place `u-boot` image at relocation address as it is explained [here](https://source.denx.de/u-boot/u-boot/blob/HEAD/doc/README.arm-relocation). Two ways to get this address described at the end of this document. Right after that we can continue to debug at relocated memory area. Detailed explanation might be found [here](https://m2m-tele.com/?p=1026&preview=true).
+Here we set breakpoint at `relocate_code` function to make sure that `board_init_f` completed and we can place `u-boot` image at relocation address as it is explained [here](https://source.denx.de/u-boot/u-boot/blob/HEAD/doc/README.arm-relocation). Two ways to get this address described at the end of this document. Right after that we can continue to debug at relocated memory area. Detailed explanation might be found [here](https://m2m-tele.com/blog/2021/10/24/u-boot-debugging-part-2/).
 
 #### GUI debugging
 
@@ -144,7 +144,8 @@ $ docker exec -it openwrt bash
 
 #### user layer applications development
 here two developers guide to develop and debug user layer applications:
-- [debugging u-boot. Detailed guide](https://m2m-tele.com/blog/2021/09/19/how-to-debug-u-boot/)
+- [u-boot debugging guide](https://m2m-tele.com/blog/2021/09/19/how-to-debug-u-boot/)
+- [u-boot debugging guide part 2. Relocation workaround.](https://m2m-tele.com/blog/2021/10/24/u-boot-debugging-part-2/)
 - [openwrt development and debugging using eclipse ide](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/)
 - [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
 
