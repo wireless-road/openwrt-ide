@@ -6,7 +6,11 @@ RUN apt-get upgrade -y
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Moscow
 
-RUN apt-get install -y build-essential libssl-dev git libncurses5-dev unzip gawk zlib1g-dev flex vim curl wget bison python net-tools iputils-ping libflatbuffers-dev openjdk-8-jre libswt-gtk* libcanberra-gtk-module udev gdb-multiarch
+RUN apt-get install -y build-essential libssl-dev git libncurses5-dev unzip \
+    gawk zlib1g-dev flex vim curl wget bison python net-tools iputils-ping \
+    python3 rsync python3-setuptools  \
+    libflatbuffers-dev openjdk-8-jre libswt-gtk* libcanberra-gtk-module udev \
+    gdb-multiarch
 
 COPY install.sh drivers /drivers/
 RUN ls /drivers
