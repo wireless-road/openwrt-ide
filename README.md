@@ -14,7 +14,7 @@ This project makes two things:
 
 Clone the repository:
 ```
-git clone https://github.com/wireless-road/openwrt-ide.git
+https://github.com/wireless-road/openwrt-ide/tree/openwrt-2021.02
 ```
 
 Open `docker-compose.yml` and replace left side of `- /home/al/docker/ide/:/opt/eclipse/` volume declaration to the path you want openwrt sources and eclipse to be placed.
@@ -35,7 +35,8 @@ It makes few things:
 2. build simpliest device configuration image to get toolchain compiled.
 3. installs eclipse.
 
-As it finishes you should find `eclipse` and `imx6ull-openwrt` folders by `/opt/eclipse` path.
+After finishing you may find `/opt/eclipse` with inner `eclipse` and `imx6ull-openwrt` folders.
+
 As eclipse has very limited possibilities for creation and configuration projects from command line but luckely it is portable we did a trick:
 installed Eclipse on host machine at same path (`/opt/eclipse/eclipse`), created project from existing makefile project for `u-boot` sources (`kernel` project to be added soon, I hope), packet resulted folder to archive and here is preconfigured Eclipse installer. So don't move `eclipse` and `imx6ull-openwrt` folders to different pathes as it will brake Eclipse`s projects.
 
@@ -77,8 +78,7 @@ right click on project and press to `Build Project`:
 
 ### Debugging U-boot
 The unexpected thing you must keep in mind when you start debug U-boot is that it [relocates](https://source.denx.de/u-boot/u-boot/blob/HEAD/doc/README.arm-relocation) itself from one RAM memory address to another (to the end of RAM).
-The only dirty thing need to be done is hard code one line in source code. For that:
-In the link above step by ste guide provided to workaround. 
+
 
 #### Command line debugging
 So in command line mode debugging you have to:
@@ -263,4 +263,9 @@ here two developers guide to develop and debug user layer applications:
 - [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
 
 
+#### add new project
+if you made some changes using eclipse IDE (created and added new projects, for example),
+```
+tar -zcvf m2m-eclipse.tar.gz eclipse/
+```
 
