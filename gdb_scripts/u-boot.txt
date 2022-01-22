@@ -1,0 +1,39 @@
+set confirm off
+target remote localhost:2331
+monitor reset
+monitor halt
+monitor sleep 200
+load
+load
+b fdtdec_prepare_fdt
+c
+set gd->fdt_blob = _end
+restore u-boot.dtb binary _end
+b setup_reloc
+c
+p /x gd->relocaddr
+set $s = gd->relocaddr
+add-symbol-file u-boot $s
+b relocate_code
+c
+p /x $pc
+fin
+p /x $pc
+b boot_jump_linux
+c
+n
+n
+n
+n
+n
+n
+n
+n
+n
+p /x $r2
+set $r2 = 0x82000000
+restore image-flexcan_ethernet.dtb binary $r2
+load vmlinux
+s
+b start_kernel
+
