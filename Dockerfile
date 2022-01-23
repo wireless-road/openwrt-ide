@@ -23,6 +23,6 @@ RUN install -d -o $UNAME -g $UNAME /opt/eclipse
 
 USER $UNAME
 
-COPY --chown=1000:1000 setup_ide.sh env.sh compile_uboot_debuggable.sh m2m-eclipse.tar.gz projects "/home/$UNAME/"
+COPY --chown=1000:1000 setup_ide.sh env.sh compile_uboot_debuggable.sh compile_kernel_debuggable.sh m2m-eclipse.tar.gz projects "/home/$UNAME/"
 WORKDIR /home/$UNAME
 

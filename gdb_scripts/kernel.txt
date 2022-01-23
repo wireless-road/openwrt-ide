@@ -1,0 +1,15 @@
+target remote localhost:2331
+restore arch/arm/boot/uImage binary 0x82000000
+restore ../image-flexcan_ethernet.dtb binary 0x83000000
+b __hyp_stub_install
+c
+
+
+=> bootm 82000000 - 83000000
+
+
+b start_kernel
+c
+b rest_init
+c
+

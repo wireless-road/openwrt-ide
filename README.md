@@ -67,7 +67,7 @@ $ /opt/eclipse/eclipse/eclipse
 ```
 Import existing project you want to work on as existing Makefile project. Guides to do that might be found [here](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/) and [here](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/).
 
-Pre-installed u-boot project might be found on Eclipse opening:
+Pre-installed u-boot and Linux kernel project might be found on Eclipse opening:
 
 ![eclipse](./doc/u-boot.png "u-boot")
 
@@ -82,6 +82,13 @@ The unexpected thing you must keep in mind when you start debug U-boot is that i
 
 #### Command line debugging
 So in command line mode debugging you have to:
+
+**0.** Compile u-boot first:
+
+```
+$ cd ~
+$ ./compile_uboot_debuggable.sh
+```
 
 **1.** Start GDB server:
 ```
@@ -241,6 +248,313 @@ and navigate through the code. If you left breakpoint unchanged it should stop y
 ![debugging_2](./doc/u_boot_relocation.png "relocation")
 Than you can continue to debug code even after relocation.
 
+
+### Debugging Linux Kernel
+
+#### Command line mode
+First, power up device and press enter on u-boot countdown to prevent linux kernel loading.
+
+1. Enter Linux kernel sources folder:
+
+```
+cd /opt/eclipse/imx6ull-openwrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/
+```
+
+2. make sure that debugging optimized build option selected in `.config` file:
+
+```
+$ cat .config | grep OPTIMIZE
+CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y
+# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+# CONFIG_CC_OPTIMIZE_FOR_DEBUGGING is not set
+```
+3. build kernel image:
+
+```
+make -j $(nproc) uImage LOADADDR=0x80008000
+```
+
+4. start GDB server:
+
+```
+$ jl_server 
+SEGGER J-Link GDB Server V7.54b Command Line Version
+
+JLinkARM.dll V7.54b (DLL compiled Sep 14 2021 16:11:24)
+
+Command line: -device MCIMX6Y2 -if JTAG -speed 1000
+-----GDB Server start settings-----
+GDBInit file:                  none
+GDB Server Listening port:     2331
+SWO raw output listening port: 2332
+Terminal I/O port:             2333
+Accept remote connection:      yes
+Generate logfile:              off
+Verify download:               off
+Init regs on start:            off
+Silent mode:                   off
+Single run mode:               off
+Target connection timeout:     0 ms
+------J-Link related settings------
+J-Link Host interface:         USB
+J-Link script:                 none
+J-Link settings file:          none
+------Target related settings------
+Target device:                 MCIMX6Y2
+Target interface:              JTAG
+Target interface speed:        1000kHz
+Target endian:                 little
+
+Connecting to J-Link...
+J-Link is connected.
+Firmware: J-Link ARM V8 compiled Nov 28 2014 13:44:46
+Hardware: V8.00
+Feature(s): RDI,FlashDL,FlashBP,JFlash,GDB
+Checking target voltage...
+Target voltage: 3.32 V
+Listening on TCP/IP port 2331
+Connecting to target...
+
+J-Link found 3 JTAG devices, Total IRLen = 13
+JTAG ID: 0x5BA00477 (Cortex-A7)
+Connected to target
+```
+
+5. start GDB session (from another shell):
+
+```
+$ jl_kernel 
+GNU gdb (Ubuntu 10.1-2ubuntu2) 10.1.90.20210411-git
+Reading symbols from vmlinux...
+(gdb) 
+```
+and connect to target hardware:
+```
+(gdb) target remote localhost:2331
+Remote debugging using localhost:2331
+0x8ff5cfc4 in ?? ()
+```
+
+6. load binary `uImage` compiled on step 3 and binary `dtb` file compiled previously on running `.setup_ide.sh`:
+
+```
+(gdb) restore arch/arm/boot/uImage binary 0x82000000
+Restoring binary file arch/arm/boot/uImage into memory (0x82000000 to 0x8241c758)
+(gdb) restore ../image-flexcan_ethernet.dtb binary 0x83000000
+Restoring binary file ../image-flexcan_ethernet.dtb into memory (0x83000000 to 0x83006b47)
+```
+
+7. set breakpoint on kernel starting function and start processor running:
+```
+(gdb) b __hyp_stub_install
+Breakpoint 1 at 0x8010fb80: file arch/arm/kernel/hyp-stub.S, line 76.
+(gdb) c
+Continuing.
+```
+
+8. ater that u-boot shell should become back responcible for typing. Start kernel booting by:
+
+```
+=> bootm 82000000 - 83000000   
+## Booting kernel from Legacy Image at 82000000 ...
+   Image Name:   Linux-5.4.168
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4310808 Bytes = 4.1 MiB
+   Load Address: 80008000
+   Entry Point:  80008000
+   Verifying Checksum ... OK
+## Flattened Device Tree blob at 83000000
+   Booting using the fdt blob at 0x83000000
+   Loading Kernel Image ... OK
+   Using Device Tree in place at 83000000, end 83009b46                                                                                                                             
+                                                                                                                                                                                    
+Starting kernel ...                                                                                                                                                                 
+```
+
+9. Switch back to gdb shell - it should stop on breakpoint:
+
+```
+Continuing.
+
+Breakpoint 1, __hyp_stub_install () at arch/arm/kernel/hyp-stub.S:76
+76		store_primary_cpu_mode	r4, r5, r6
+(gdb) 
+```
+
+set breakpoint to `start_kernel` function and start processor running again:
+
+```
+(gdb) b start_kernel
+Breakpoint 2 at 0x80a00934: file init/main.c, line 605.
+(gdb) c
+Continuing.
+
+Breakpoint 2, start_kernel () at init/main.c:605
+605		set_task_stack_end_magic(&init_task);
+```
+
+and walk through the code:
+
+```
+(gdb) n
+606		smp_setup_processor_id();
+(gdb) n
+611		local_irq_disable();
+(gdb) n
+612		early_boot_irqs_disabled = true;
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) n
+618		boot_cpu_init();
+(gdb) n
+619		page_address_init();
+(gdb) n
+620		pr_notice("%s", linux_banner);
+(gdb) p /s linux_banner
+$6 = 0x808aad94 <linux_banner> "Linux version 5.4.168 (al@b94678055031) (gcc version 8.4.0 (OpenWrt GCC 8.4.0 r16520-531aad5aa0)) #2 SMP PREEMPT Sun Jan 23 18:24:31 MSK 2022\n"
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) n
+622		setup_arch(&command_line);
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) p /s command_line
+$9 = 0x80a42a58 <cmd_line> "console=ttymxc0,115200 rootwait fixrtc quiet"
+(gdb) n
+625		setup_nr_cpu_ids();
+(gdb) n
+626		setup_per_cpu_areas();
+(gdb) n
+627		smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
+(gdb) n
+628		boot_cpu_hotplug_init();
+(gdb) n
+630		build_all_zonelists(NULL);
+(gdb) n
+631		page_alloc_init();
+(gdb) n
+633		pr_notice("Kernel command line: %s\n", boot_command_line);
+(gdb) p /s boot_command_line
+$11 = 0x80a42004 <boot_command_line> "console=ttymxc0,115200 rootwait fixrtc quiet"
+(gdb) n
+635		jump_label_init();
+(gdb) n
+636		parse_early_param();
+(gdb) n
+637		after_dashes = parse_args("Booting kernel",
+(gdb) n
+641		if (!IS_ERR_OR_NULL(after_dashes))
+(gdb) n
+649		setup_log_buf(0);
+(gdb) n
+653		mm_init();
+(gdb) n
+651		sort_main_extable();
+(gdb) n
+652		trap_init();
+(gdb) n
+653		mm_init();
+(gdb) n
+665		sched_init();
+(gdb) n
+670		preempt_disable();
+(gdb) n
+671		if (WARN(!irqs_disabled(),
+(gdb) n
+674		radix_tree_init();
+(gdb) n
+680		housekeeping_init();
+(gdb) n
+687		workqueue_init_early();
+(gdb) n
+689		rcu_init();
+(gdb) n
+699		early_irq_init();
+(gdb) n
+700		init_IRQ();
+(gdb) n
+701		tick_init();
+(gdb) n
+703		init_timers();
+(gdb) n
+704		hrtimers_init();
+(gdb) n
+705		softirq_init();
+(gdb) n
+706		timekeeping_init();
+(gdb) n
+716		rand_initialize();
+(gdb) n
+718		add_device_randomness(command_line, strlen(command_line));
+(gdb) n
+719		boot_init_stack_canary();
+(gdb) n
+721		time_init();
+(gdb) n
+724		call_function_init();
+(gdb) n
+725		WARN(!irqs_disabled(), "Interrupts were enabled early\n");
+(gdb) n
+727		early_boot_irqs_disabled = false;
+(gdb) n
+728		local_irq_enable();
+(gdb) n
+730		kmem_cache_init_late();
+(gdb) n
+737		console_init();
+(gdb) n
+738		if (panic_later)
+(gdb) n
+757		mem_encrypt_init();
+(gdb) n
+760		if (initrd_start && !initrd_below_start_ok &&
+(gdb) n
+768		setup_per_cpu_pageset();
+(gdb) n
+771		if (late_time_init)
+(gdb) n
+773		sched_clock_init();
+(gdb) n
+774		calibrate_delay();
+(gdb) n
+775		pid_idr_init();
+(gdb) n
+776		anon_vma_init();
+(gdb) n
+781		thread_stack_cache_init();
+(gdb) n
+782		cred_init();
+(gdb) n
+783		fork_init();
+(gdb) n
+784		proc_caches_init();
+(gdb) n
+786		buffer_init();
+(gdb) n
+787		key_init();
+(gdb) n
+790		vfs_caches_init();
+(gdb) n
+791		pagecache_init();
+(gdb) n
+792		signals_init();
+(gdb) n
+793		seq_file_init();
+(gdb) n
+794		proc_root_init();
+(gdb) n
+795		nsfs_init();
+(gdb) n
+801		poking_init();
+(gdb) n
+802		check_bugs();
+(gdb) n
+805		arch_post_acpi_subsys_init();
+(gdb) n
+809		arch_call_rest_init();
+(gdb) n
+
+```
 
 #### container restarting
 

@@ -29,3 +29,7 @@ cp u-boot/.project "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a
 mkdir -p "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/.settings"
 cp u-boot/org.eclipse.cdt.core.prefs "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/.settings"
 
+cp kernel/.cproject "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/"
+cp kernel/.project "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/"
+mkdir -p "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/.settings"
+cp kernel/org.eclipse.cdt.core.prefs "$ROOT_DIR/$IMX6ULL_OPENWRT_DIR/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/.settings"
