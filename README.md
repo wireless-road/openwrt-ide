@@ -8,6 +8,20 @@ This project makes two things:
    2. debug u-boot, kernel (not implemented yet) using external J-Link USB debugger connected to the [NetSoM Development Board](https://m2m-tele.com/product/imx6-development-board/) using JTAG interface:
    3. debug user layer application using onboard gdb server.
 
+## Table of contents
+- [Compile images](#getting-started)
+    - [Install IDE](#getting-started)
+    - [Compile in command line mode](#command-line-mode)
+    - [Compile in GUI mode](#gui-mode)
+- [Debugging U-boot](#debugging-u-boot)
+    - [Command line mode](#command-line-debugging)
+    - [Gui mode](#gui-debugging)
+- [Debugging Linux Kernel](#debugging-linux-kernel)
+    - [Command line mode](#command-line)
+- [Debugging U-boot and Kernel in same session]()
+- [IDE typical scenarios](#container-restarting)
+- [Development guides](#development-guides)
+
 ![jlink_netsom_development_board](./doc/jlink_netsom_dev_board.jpg "jlink + netsom")
 
 ## Getting started
@@ -251,7 +265,7 @@ Than you can continue to debug code even after relocation.
 
 ### Debugging Linux Kernel
 
-#### Command line mode
+#### Command line
 First, power up device and press enter on u-boot countdown to prevent linux kernel loading.
 
 1. Enter Linux kernel sources folder:
@@ -556,9 +570,331 @@ $11 = 0x80a42004 <boot_command_line> "console=ttymxc0,115200 rootwait fixrtc qui
 
 ```
 
-#### container restarting
+#### Debugging U-boot and linux kernel in same session
 
-on exit from container console it stops:
+0. Power up device connected to JLink debugger and USB-UART adapter. Press on u-boot countdown to prevent kernel loading.
+
+1. Connect to IDE container and start GDB server:
+Don't provide executable file here.
+
+```
+$ docker exec -it openwrt bash
+$ jl_server
+SEGGER J-Link GDB Server V7.54b Command Line Version
+
+JLinkARM.dll V7.54b (DLL compiled Sep 14 2021 16:11:24)
+
+Command line: -device MCIMX6Y2 -if JTAG -speed 1000
+-----GDB Server start settings-----
+GDBInit file:                  none
+GDB Server Listening port:     2331
+SWO raw output listening port: 2332
+Terminal I/O port:             2333
+Accept remote connection:      yes
+Generate logfile:              off
+Verify download:               off
+Init regs on start:            off
+Silent mode:                   off
+Single run mode:               off
+Target connection timeout:     0 ms
+------J-Link related settings------
+J-Link Host interface:         USB
+J-Link script:                 none
+J-Link settings file:          none
+------Target related settings------
+Target device:                 MCIMX6Y2
+Target interface:              JTAG
+Target interface speed:        1000kHz
+Target endian:                 little
+
+Connecting to J-Link...
+J-Link is connected.
+Firmware: J-Link ARM V8 compiled Nov 28 2014 13:44:46
+Hardware: V8.00
+Feature(s): RDI,FlashDL,FlashBP,JFlash,GDB
+Checking target voltage...
+Target voltage: 3.31 V
+Listening on TCP/IP port 2331
+Connecting to target...
+
+J-Link found 3 JTAG devices, Total IRLen = 13
+JTAG ID: 0x5BA00477 (Cortex-A7)
+Connected to target
+Waiting for GDB connection...
+```
+
+2. Connect to IDE container from another shell:
+
+```
+$ docker exec -it openwrt bash
+```
+
+3. Enter sources root folder and start gdb session:
+
+```
+$ cd /opt/eclipse/imx6ull-openwrt
+$ gdb-multiarch --nx
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb) 
+```
+
+4. Connect to target and provide u-boot debuggable executable:
+
+```
+(gdb) set confirm off
+(gdb) file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot
+Reading symbols from build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot...
+(gdb) target remote localhost:2331
+Remote debugging using localhost:2331
+Cannot access memory at address 0xc93c4
+Cannot access memory at address 0xc93c0
+Cannot access memory at address 0xc93c4
+0x8ff5cfc4 in ?? ()
+(gdb) monitor reset
+Resetting target
+(gdb) monitor halt
+(gdb) monitor sleep 200
+Sleep 200ms
+```
+
+5. Load u-boot executable twice (loading it just once leads to unstable debugging process):
+
+```
+(gdb) load
+Loading section .text, size 0x3a8 lma 0x87800000
+Loading section .efi_runtime, size 0xf68 lma 0x878003a8
+Loading section .text_rest, size 0x7aec4 lma 0x87801320
+Loading section .rodata, size 0x16f42 lma 0x8787c1e8
+Loading section .hash, size 0x18 lma 0x8789312c
+Loading section .data, size 0x7bf4 lma 0x87893148
+Loading section .got.plt, size 0xc lma 0x8789ad3c
+Loading section .u_boot_list, size 0x126c lma 0x8789ad48
+Loading section .efi_runtime_rel, size 0xd0 lma 0x8789bfb4
+Loading section .rel.dyn, size 0x10198 lma 0x8789c084
+Loading section .dynsym, size 0x30 lma 0x878ac21c
+Loading section .dynstr, size 0x1 lma 0x878ac24c
+Loading section .dynamic, size 0x90 lma 0x878ac250
+Loading section .gnu.hash, size 0x18 lma 0x878ac2e0
+Start address 0x87800000, load size 705243
+Transfer rate: 69 KB/sec, 13060 bytes/write.
+(gdb) load
+Loading section .text, size 0x3a8 lma 0x87800000
+Loading section .efi_runtime, size 0xf68 lma 0x878003a8
+Loading section .text_rest, size 0x7aec4 lma 0x87801320
+Loading section .rodata, size 0x16f42 lma 0x8787c1e8
+Loading section .hash, size 0x18 lma 0x8789312c
+Loading section .data, size 0x7bf4 lma 0x87893148
+Loading section .got.plt, size 0xc lma 0x8789ad3c
+Loading section .u_boot_list, size 0x126c lma 0x8789ad48
+Loading section .efi_runtime_rel, size 0xd0 lma 0x8789bfb4
+Loading section .rel.dyn, size 0x10198 lma 0x8789c084
+Loading section .dynsym, size 0x30 lma 0x878ac21c
+Loading section .dynstr, size 0x1 lma 0x878ac24c
+Loading section .dynamic, size 0x90 lma 0x878ac250
+Loading section .gnu.hash, size 0x18 lma 0x878ac2e0
+Start address 0x87800000, load size 705243
+Transfer rate: 69 KB/sec, 13060 bytes/write.
+```
+
+6. Start execution and place u-boot dtb in memory:
+
+```
+(gdb) b fdtdec_prepare_fdt
+Breakpoint 1 at 0x87870be4: file lib/fdtdec.c, line 587.
+(gdb) c
+Continuing.
+
+Breakpoint 1, fdtdec_prepare_fdt () at lib/fdtdec.c:587
+587		if (!gd->fdt_blob || ((uintptr_t)gd->fdt_blob & 3) ||
+(gdb) set gd->fdt_blob = _end
+(gdb) restore build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot.dtb binary _end
+Restoring binary file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot.dtb into memory (0x878ac21c to 0x878b38bb)
+```
+
+7. Pass U-boot relocation procedure:
+
+```
+(gdb) b setup_reloc
+Breakpoint 2 at 0x8781a874: file common/board_f.c, line 680.
+(gdb) c
+Continuing.
+
+Breakpoint 2, setup_reloc () at common/board_f.c:680
+680		if (gd->flags & GD_FLG_SKIP_RELOC) {
+(gdb) p /x gd->relocaddr
+$1 = 0x8ff37000
+(gdb) set $s = gd->relocaddr
+(gdb) add-symbol-file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot $s
+add symbol table from file "build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot" at
+	.text_addr = 0x8ff37000
+Reading symbols from build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot...
+(gdb) b relocate_code
+Breakpoint 3 at 0x87801bc4: file arch/arm/lib/relocate.S, line 81.
+(gdb) c
+Continuing.
+
+Breakpoint 3, relocate_code () at arch/arm/lib/relocate.S:81
+81		ldr	r1, =__image_copy_start	/* r1 <- SRC &__image_copy_start */
+(gdb) p /x $pc
+$2 = 0x87801bc4
+(gdb) fin
+Run till exit from #0  relocate_code () at arch/arm/lib/relocate.S:81
+?? () at arch/arm/lib/crt0.S:145
+145		bl	relocate_vectors
+(gdb) p /x $pc
+$3 = 0x8ff386a8
+```
+
+8. Run forward till jumping to Linux Kernel:
+
+```
+(gdb) b boot_jump_linux
+Breakpoint 4 at 0x87801cd0: boot_jump_linux. (2 locations)
+(gdb) c
+Continuing.
+
+Breakpoint 4, boot_jump_linux (images=images@entry=0x8ffd3bcc, flag=flag@entry=1024) at arch/arm/lib/bootm.c:378
+378		unsigned long machid = gd->bd->bi_arch_number;
+(gdb) n
+384		kernel_entry = (void (*)(int, int, uint))images->ep;
+(gdb) n
+389		s = env_get("machid");
+(gdb) p /x kernel_entry
+$4 = 0x80008000
+(gdb) n
+390		if (s) {
+(gdb) n
+400		bootstage_mark(BOOTSTAGE_ID_RUN_OS);
+(gdb) n
+401		announce_and_cleanup(fake);
+(gdb) n
+403		if (IMAGE_ENABLE_OF_LIBFDT && images->ft_len)
+(gdb) n
+404			r2 = (unsigned long)images->ft_addr;
+(gdb) n
+406			r2 = gd->bd->bi_boot_params;
+(gdb) n
+408		if (!fake) {
+(gdb) n
+416				kernel_entry(0, machid, r2);
+(gdb) p /x $r2
+$5 = 0x80000100
+```
+
+9. Then load linux kernel executable:
+```
+(gdb) file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/vmlinux
+Reading symbols from build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/vmlinux...
+(gdb) load
+Loading section .head.text, size 0x26c lma 0x80008000
+Loading section .text, size 0x6062b8 lma 0x80100000
+Loading section .rodata, size 0x17fab8 lma 0x80800000
+Loading section .pci_fixup, size 0x1ef0 lma 0x8097fab8
+Loading section __ksymtab, size 0xcaec lma 0x809819a8
+Loading section __ksymtab_gpl, size 0xbd54 lma 0x8098e494
+Loading section __ksymtab_strings, size 0x27eb3 lma 0x8099a1e8
+Loading section __param, size 0xd98 lma 0x809c209c
+Loading section __ex_table, size 0x660 lma 0x809c3000
+Loading section .ARM.unwind_idx, size 0x29d98 lma 0x809c3660
+Loading section .ARM.unwind_tab, size 0x924 lma 0x809ed3f8
+Loading section .notes, size 0x3c lma 0x809edd1c
+Loading section .vectors, size 0x20 lma 0x80a00000
+Loading section .stubs, size 0x2ac lma 0x80a00020
+Loading section .init.text, size 0x3b40c lma 0x80a002e0
+Loading section .exit.text, size 0x11fc lma 0x80a3b6ec
+Loading section .init.arch.info, size 0x208 lma 0x80a3c8e8
+Loading section .init.tagtable, size 0x40 lma 0x80a3caf0
+Loading section .init.smpalt, size 0x4d80 lma 0x80a3cb30
+Loading section .init.pv_table, size 0x17c lma 0x80a418b0
+Loading section .init.data, size 0xdd4c lma 0x80a42000
+Loading section .data..percpu, size 0x6d0c lma 0x80a50000
+Loading section .data, size 0x3fe00 lma 0x80b00000
+Loading section __bug_table, size 0x5298 lma 0x80b3fe00
+Start address 0x80008000, load size 8975799
+Transfer rate: 70 KB/sec, 15802 bytes/write.
+(gdb) load
+Loading section .head.text, size 0x26c lma 0x80008000
+Loading section .text, size 0x6062b8 lma 0x80100000
+Loading section .rodata, size 0x17fab8 lma 0x80800000
+Loading section .pci_fixup, size 0x1ef0 lma 0x8097fab8
+Loading section __ksymtab, size 0xcaec lma 0x809819a8
+Loading section __ksymtab_gpl, size 0xbd54 lma 0x8098e494
+Loading section __ksymtab_strings, size 0x27eb3 lma 0x8099a1e8
+Loading section __param, size 0xd98 lma 0x809c209c
+Loading section __ex_table, size 0x660 lma 0x809c3000
+Loading section .ARM.unwind_idx, size 0x29d98 lma 0x809c3660
+Loading section .ARM.unwind_tab, size 0x924 lma 0x809ed3f8
+Loading section .notes, size 0x3c lma 0x809edd1c
+Loading section .vectors, size 0x20 lma 0x80a00000
+Loading section .stubs, size 0x2ac lma 0x80a00020
+Loading section .init.text, size 0x3b40c lma 0x80a002e0
+Loading section .exit.text, size 0x11fc lma 0x80a3b6ec
+Loading section .init.arch.info, size 0x208 lma 0x80a3c8e8
+Loading section .init.tagtable, size 0x40 lma 0x80a3caf0
+Loading section .init.smpalt, size 0x4d80 lma 0x80a3cb30
+Loading section .init.pv_table, size 0x17c lma 0x80a418b0
+Loading section .init.data, size 0xdd4c lma 0x80a42000
+Loading section .data..percpu, size 0x6d0c lma 0x80a50000
+Loading section .data, size 0x3fe00 lma 0x80b00000
+Loading section __bug_table, size 0x5298 lma 0x80b3fe00
+Start address 0x80008000, load size 8975799
+Transfer rate: 69 KB/sec, 15802 bytes/write.
+```
+
+10. Remove U-boot breakpoints:
+
+```
+(gdb) del
+```
+
+11. Run Linux kernel and enter start_kernel function:
+
+```
+(gdb) b start_kernel
+Breakpoint 5 at 0x80a00934: file init/main.c, line 605.
+(gdb) restore build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/image-flexcan_ethernet.dtb binary 0x83000000
+Restoring binary file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/image-flexcan_ethernet.dtb into memory (0x83000000 to 0x83006b47)
+(gdb) set $r2=0x83000000
+(gdb) c
+Continuing.
+
+Breakpoint 5, start_kernel () at init/main.c:605
+605		set_task_stack_end_magic(&init_task);
+```
+
+12. Walk through initialization procedure:
+
+```
+(gdb) n
+606		smp_setup_processor_id();
+(gdb) n
+611		local_irq_disable();
+(gdb) n
+612		early_boot_irqs_disabled = true;
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) n
+618		boot_cpu_init();
+(gdb) n
+619		page_address_init();
+(gdb) n
+620		pr_notice("%s", linux_banner);
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) p /s linux_banner
+$6 = 0x808aad94 <linux_banner> "Linux version 5.4.168 (al@b94678055031) (gcc version 8.4.0 (OpenWrt GCC 8.4.0 r16520-531aad5aa0)) #2 SMP PREEMPT Sun Jan 23 18:24:31 MSK 2022\n"
+(gdb) n
+622		setup_arch(&command_line);
+(gdb) n
+624		setup_command_line(command_line);
+(gdb) p /s command_line
+$7 = 0x80a42a58 <cmd_line> "console=ttymxc0,115200 rootwait fixrtc quiet"
+```
+
+#### docker commands
+
+to exit docker container:
 ```
 $ exit
 ```
@@ -569,17 +905,12 @@ $ docker start openwrt
 $ docker exec -it openwrt bash
 ```
 
-#### user layer applications development
+#### development guides
 here two developers guide to develop and debug user layer applications:
-- [u-boot debugging guide](https://m2m-tele.com/blog/2021/09/19/how-to-debug-u-boot/)
-- [u-boot debugging guide part 2. Relocation workaround.](https://m2m-tele.com/blog/2021/10/24/u-boot-debugging-part-2/)
 - [openwrt development and debugging using eclipse ide](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/)
 - [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
-
-
-#### add new project
-if you made some changes using eclipse IDE (created and added new projects, for example),
-```
-tar -zcvf m2m-eclipse.tar.gz eclipse/
-```
+- [u-boot debugging guide](https://m2m-tele.com/blog/2021/09/19/how-to-debug-u-boot/)
+- [u-boot debugging guide part 2. Relocation workaround.](https://m2m-tele.com/blog/2021/10/24/u-boot-debugging-part-2/)
+- [u-boot initialization sequence](https://m2m-tele.com/blog/2021/10/24/u-boot-initialization-sequence/)
+- [Linux kernel debugging](https://m2m-tele.com/blog/2021/11/30/embedded-linux-kernel-debugging-using-gdb-and-jtag-programmator/)
 

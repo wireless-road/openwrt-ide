@@ -1,0 +1,44 @@
+set confirm off
+file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot
+target remote localhost:2331
+monitor reset
+monitor halt
+monitor sleep 200
+load
+load
+b fdtdec_prepare_fdt
+c
+set gd->fdt_blob = _end
+restore build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot.dtb binary _end
+b setup_reloc
+c
+p /x gd->relocaddr
+set $s = gd->relocaddr
+add-symbol-file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/u-boot-wirelessroad_ecspi3/u-boot-2020.10/u-boot $s
+b relocate_code
+c
+p /x $pc
+fin
+p /x $pc
+b boot_jump_linux
+c
+n
+n
+p /x kernel_entry
+n
+n
+n
+n
+n
+n
+n
+p /x r2
+n
+file build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/linux-5.4.168/vmlinux
+load
+load
+del
+b start_kernel
+restore build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-imx6ull_cortexa7/image-flexcan_ethernet.dtb binary 0x83000000
+set $r2=0x83000000
+c
