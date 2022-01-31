@@ -18,7 +18,7 @@ This project makes two things:
     - [Console mode](#console-mode-2)
     - [Gui mode](#gui-mode-2)
 - [Debugging Linux Kernel](#debugging-linux-kernel)
-    - [Consolee mode](#console-mode-3)
+    - [Console mode](#console-mode-3)
 - [Debugging U-boot and Kernel in same session](#debugging-u-boot-and-linux-kernel-in-same-session)
     - [Console mode](#console-mode-4)
 - [IDE typical scenarios](#docker-commands)
