@@ -8,23 +8,25 @@ This project makes two things:
    2. debug u-boot, kernel (not implemented yet) using external J-Link USB debugger connected to the [NetSoM Development Board](https://m2m-tele.com/product/imx6-development-board/) using JTAG interface:
    3. debug user layer application using onboard gdb server.
 
-## Table of contents
+<h2 id="table-of-contents">Table of contents</h2>
+
 - [Compile images](#getting-started)
     - [Install IDE](#getting-started)
-    - [Compile in command line mode](#command-line-mode)
+    - [Compile in console mode](#console-mode)
     - [Compile in GUI mode](#gui-mode)
 - [Debugging U-boot](#debugging-u-boot)
-    - [Command line mode](#command-line-debugging)
-    - [Gui mode](#gui-debugging)
+    - [Console mode](#console-mode-2)
+    - [Gui mode](#gui-mode-2)
 - [Debugging Linux Kernel](#debugging-linux-kernel)
-    - [Command line mode](#command-line)
-- [Debugging U-boot and Kernel in same session]()
-- [IDE typical scenarios](#container-restarting)
+    - [Consolee mode](#console-mode-3)
+- [Debugging U-boot and Kernel in same session](#debugging-u-boot-and-linux-kernel-in-same-session)
+    - [Console mode](#console-mode-4)
+- [IDE typical scenarios](#docker-commands)
 - [Development guides](#development-guides)
 
 ![jlink_netsom_development_board](./doc/jlink_netsom_dev_board.jpg "jlink + netsom")
 
-## Getting started
+<h2 id="getting-started">Getting started</h2>
 
 Clone the repository:
 ```
@@ -56,7 +58,9 @@ installed Eclipse on host machine at same path (`/opt/eclipse/eclipse`), created
 
 So after you finished setup (just once) you can start to work with source code using command line or eclipse GUI.
 
-### command line mode
+[back](#table-of-contents) 
+
+<h3 id="console-mode">Compile in console mode</h3>
 
 just move to source code folder:
 
@@ -72,8 +76,9 @@ $ ./compile.sh <any available configuration>
 
 the only pros of using docker image in that case is fastest way to getting started: no need to deal with possible troubles that might happens on requirements installation or sources compilation.
 
+[back](#table-of-contents) 
 
-### gui mode
+<h3 id="gui-mode">Compile in GUI mode</h3>
 
 launch eclipse:
 ```
@@ -89,12 +94,13 @@ right click on project and press to `Clean Project`.
 right click on project and press to `Build Project`:
 ![build and clean](./doc/build_clean_project.png "u-boot")
 
+[back](#table-of-contents) 
 
-### Debugging U-boot
+<h3 id="debugging-u-boot">Debugging U-boot</h3>
 The unexpected thing you must keep in mind when you start debug U-boot is that it [relocates](https://source.denx.de/u-boot/u-boot/blob/HEAD/doc/README.arm-relocation) itself from one RAM memory address to another (to the end of RAM).
 
 
-#### Command line debugging
+<h4 id="console-mode-2">Debugging U-boot in console mode</h4>
 So in command line mode debugging you have to:
 
 **0.** Compile u-boot first:
@@ -246,8 +252,9 @@ Breakpoint 4, boot_jump_linux (images=images@entry=0x8ffd3bcc, flag=flag@entry=1
 (gdb) n
 416				kernel_entry(0, machid, r2);
 ```
+[back](#table-of-contents) 
 
-#### GUI debugging
+<h4 id="gui-mode-2">Debugging U-boot in GUI mode</h4>
 
 To start debugging press `Run --> Debug Configurations`, select `u-boot Default` configuration.
 Pay attention for following settings:
@@ -262,10 +269,12 @@ and navigate through the code. If you left breakpoint unchanged it should stop y
 ![debugging_2](./doc/u_boot_relocation.png "relocation")
 Than you can continue to debug code even after relocation.
 
+[back](#table-of-contents) 
 
-### Debugging Linux Kernel
+<h3 id="debugging-linux-kernel">Debugging Linux Kernel</h2>
 
-#### Command line
+<h4 id="console-mode-3">Debugging Linux Kernel in console mode</h2>
+
 First, power up device and press enter on u-boot countdown to prevent linux kernel loading.
 
 1. Enter Linux kernel sources folder:
@@ -569,8 +578,11 @@ $11 = 0x80a42004 <boot_command_line> "console=ttymxc0,115200 rootwait fixrtc qui
 (gdb) n
 
 ```
+[back](#table-of-contents) 
 
-#### Debugging U-boot and linux kernel in same session
+<h3 id="debugging-u-boot-and-linux-kernel-in-same-session">Debugging U-boot and Linux kernel in same session</h3>
+
+<h4 id="console-mode-4">Debuggin U-boot and Linux kernel in console mode</h2>
 
 0. Power up device connected to JLink debugger and USB-UART adapter. Press on u-boot countdown to prevent kernel loading.
 
@@ -891,8 +903,9 @@ $6 = 0x808aad94 <linux_banner> "Linux version 5.4.168 (al@b94678055031) (gcc ver
 (gdb) p /s command_line
 $7 = 0x80a42a58 <cmd_line> "console=ttymxc0,115200 rootwait fixrtc quiet"
 ```
+[back](#table-of-contents) 
 
-#### docker commands
+<h2 id="docker-commands">Docker commands</h2>
 
 to exit docker container:
 ```
@@ -904,8 +917,10 @@ to enter it back:
 $ docker start openwrt
 $ docker exec -it openwrt bash
 ```
+[back](#table-of-contents) 
 
-#### development guides
+<h2 id="development-guides">Development guides </h2>
+
 here two developers guide to develop and debug user layer applications:
 - [openwrt development and debugging using eclipse ide](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide/)
 - [openwrt development and debugging using eclipse ide. part 2.](https://m2m-tele.com/blog/2021/09/07/embedded-linux-development-and-remote-debugging-using-eclipse-ide-part-2/)
@@ -914,3 +929,4 @@ here two developers guide to develop and debug user layer applications:
 - [u-boot initialization sequence](https://m2m-tele.com/blog/2021/10/24/u-boot-initialization-sequence/)
 - [Linux kernel debugging](https://m2m-tele.com/blog/2021/11/30/embedded-linux-kernel-debugging-using-gdb-and-jtag-programmator/)
 
+[back](#table-of-contents) 
